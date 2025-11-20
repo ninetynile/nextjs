@@ -2,7 +2,7 @@
 
 import styles from "./component.module.css";
 import { Button } from "@chakra-ui/react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Tabs, TabList, TabPanels, Tab, TabPanel } from "@chakra-ui/react";
 import {
 	Card,
@@ -26,35 +26,73 @@ import {
 	InputRightElement,
 	Textarea,
 } from "@chakra-ui/react";
+import axios from "axios";
 
 export default function HomeContent() {
-	// init cards
-	const initialCards = [
-		{
-			id: "1",
-			title: "Card 1",
-			detail:
-				"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-			ticket: "300",
-		},
-		{
-			id: "2",
-			title: "Card 2",
-			detail:
-				"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-			ticket: "250",
-		},
-		{
-			id: "3",
-			title: "Card 3",
-			detail:
-				"Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.",
-			ticket: "250",
-		},
-	];
+	const [cards, setCards] = useState([]);
 
-	//cards array state
-	const [cards, setCards] = useState(initialCards);
+	useEffect(() => {
+		getAllConcert();
+	}, []);
+
+	const getAllConcert = () => {
+		axios
+		.get("http://localhost:3000/concert")
+		.then((res) => {
+			const converted = res.data.map((c) => ({
+				id: c._id,
+				title: c.title,
+				description: c.description,
+				ticket: c.ticket,
+		}));
+			setCards(converted);
+		})
+		.catch((err) => {
+			console.error("Error fetching concerts:", err);
+		});
+	}
+
+	const createNewConcert = (concert) => {
+		axios
+		.post("http://localhost:3000/concert", concert)
+		.then((res) => {
+			getAllConcert();
+		})
+		.catch((err) => {
+			console.error("Error creating concert:", err);
+		});
+	}
+
+	const deleteConcert = (id) => {
+		axios
+		.delete(`http://localhost:3000/concert/${id}`)
+		.then((res) => {
+			getAllConcert();
+		})
+		.catch((err) => {
+			console.error("Error deleting concert:", err);
+		});
+		setIsOpen(false);
+	}
+
+	const handleCreate = () => {
+		const now = new Date().toISOString();
+
+		const concert = {
+			title: newTitle,
+			description: newDescription,
+			ticket: Number(newTicket),
+			createDate: now,
+			updateDate: now
+		};
+
+		createNewConcert(concert);
+
+		// Optional: clear form
+		setNewTitle("");
+		setNewDescription("");
+		setNewTicket("");
+	};
 
 	//Sum concert ticket
 	const sum_ticket = cards.reduce((acc, card) => {
@@ -79,7 +117,7 @@ export default function HomeContent() {
 
 	const [newTitle, setNewTitle] = useState("");
 	const [newTicket, setNewTicket] = useState("");
-	const [newDetail, setNewDetail] = useState("");
+	const [newDescription, setNewDescription] = useState("");
 
 	const handleTitleChange = (e) => {
 		setNewTitle(e.target.value);
@@ -90,9 +128,9 @@ export default function HomeContent() {
 		setNewTicket(e.target.value);
 		// console.log("Total Seats:", e.target.value);
 	};
-
-	const handleDetailChange = (e) => {
-		setNewDetail(e.target.value);
+	
+	const handleDescriptionChange = (e) => {
+		setNewDescription(e.target.value);
 		// console.log("Description:", e.target.value);
 	};
 
@@ -161,7 +199,7 @@ export default function HomeContent() {
 										</Heading>
 									</CardHeader>
 									<CardBody>
-										<Text>{item.detail}</Text>
+										<Text>{item.description}</Text>
 									</CardBody>
 									<CardFooter className={styles.cardFooter}>
 										<span>
@@ -237,15 +275,15 @@ export default function HomeContent() {
 											</FormLabel>
 											<Textarea
 												placeholder="Input concert description"
-												value={newDetail}
-												onChange={handleDetailChange}
+												value={newDescription}
+												onChange={handleDescriptionChange}
 												required
 											/>
 										</FormControl>
 									</div>
 								</CardBody>
 								<CardFooter justify="end" paddingTop={0}>
-									<Button colorScheme="blue" paddingInline={8}>
+									<Button colorScheme="blue" paddingInline={8} onClick={handleCreate}>
 										<i
 											className="bi bi-floppy"
 											style={{ paddingRight: "10px" }}
@@ -274,7 +312,7 @@ export default function HomeContent() {
 							paddingBlock={2}
 						>
 							<i
-								class="bi bi-x-circle-fill"
+								className="bi bi-x-circle-fill"
 								style={{ fontSize: "40px", color: "red" }}
 							></i>
 							{/* Delete Concert*/}
@@ -304,7 +342,9 @@ export default function HomeContent() {
 							</Button>
 							<Button
 								colorScheme="red"
-								onClick={confirmDelete}
+								onClick={() => {
+									deleteConcert(deleteId);
+								}}
 								ml={3}
 								width="50%"
 							>
