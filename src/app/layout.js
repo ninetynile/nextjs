@@ -1,5 +1,4 @@
-// src/app/layout.js
-"use client"; // <--- Add this directive at the very top
+"use client"; 
 
 import { Geist, Geist_Mono } from "next/font/google";
 import "bootstrap/dist/css/bootstrap.min.css";
